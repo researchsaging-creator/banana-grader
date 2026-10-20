@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ANALYZE_MAX_WIDTH } from '../vision/pipeline';
 
 export interface CameraState {
   ready: boolean;
@@ -6,14 +7,25 @@ export interface CameraState {
   streaming: boolean;
 }
 
+export interface CapturedFrame {
+  imageData: ImageData;
+  dataUrl: string;
+}
+
 export function useCamera() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [state, setState] = useState<CameraState>({
     ready: false,
     error: null,
     streaming: false,
   });
+
+  const getCanvas = () => {
+    if (!canvasRef.current) canvasRef.current = document.createElement('canvas');
+    return canvasRef.current;
+  };
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -49,46 +61,37 @@ export function useCamera() {
 
   useEffect(() => () => stop(), [stop]);
 
-  /** Freeze current video frame to ImageData (downscaled for speed). */
-  const captureFrame = useCallback((maxWidth = 640): ImageData | null => {
-    const video = videoRef.current;
-    if (!video || video.videoWidth === 0) return null;
+  /** One draw: analysis-sized ImageData + JPEG preview. */
+  const capture = useCallback(
+    (maxWidth = ANALYZE_MAX_WIDTH): CapturedFrame | null => {
+      const video = videoRef.current;
+      if (!video || video.videoWidth === 0) return null;
 
-    const scale = Math.min(1, maxWidth / video.videoWidth);
-    const w = Math.round(video.videoWidth * scale);
-    const h = Math.round(video.videoHeight * scale);
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, w, h);
-    return ctx.getImageData(0, 0, w, h);
-  }, []);
+      const scale = Math.min(1, maxWidth / video.videoWidth);
+      const w = Math.round(video.videoWidth * scale);
+      const h = Math.round(video.videoHeight * scale);
+      const canvas = getCanvas();
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return null;
+      ctx.drawImage(video, 0, 0, w, h);
+      return {
+        imageData: ctx.getImageData(0, 0, w, h),
+        dataUrl: canvas.toDataURL('image/jpeg', 0.85),
+      };
+    },
+    [],
+  );
 
-  const captureDataUrl = useCallback((maxWidth = 640): string | null => {
-    const video = videoRef.current;
-    if (!video || video.videoWidth === 0) return null;
-    const scale = Math.min(1, maxWidth / video.videoWidth);
-    const w = Math.round(video.videoWidth * scale);
-    const h = Math.round(video.videoHeight * scale);
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, w, h);
-    return canvas.toDataURL('image/jpeg', 0.92);
-  }, []);
-
-  return { videoRef, state, start, stop, captureFrame, captureDataUrl };
+  return { videoRef, state, start, stop, capture };
 }
 
-/** Load a File / Blob into ImageData */
+/** Load a File / Blob into ImageData (analysis-sized). */
 export async function fileToImageData(
   file: File,
-  maxWidth = 640,
-): Promise<{ imageData: ImageData; dataUrl: string }> {
+  maxWidth = ANALYZE_MAX_WIDTH,
+): Promise<CapturedFrame> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, maxWidth / bitmap.width);
   const w = Math.round(bitmap.width * scale);
@@ -102,6 +105,6 @@ export async function fileToImageData(
   bitmap.close();
   return {
     imageData: ctx.getImageData(0, 0, w, h),
-    dataUrl: canvas.toDataURL('image/jpeg', 0.92),
+    dataUrl: canvas.toDataURL('image/jpeg', 0.85),
   };
 }

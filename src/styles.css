@@ -105,6 +105,40 @@ input {
   font-size: 0.95rem;
 }
 
+.busy-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  text-align: center;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #f7fff2;
+  background: linear-gradient(90deg, var(--accent-deep), var(--accent));
+  border-radius: 999px;
+}
+
+.timing {
+  margin: -0.35rem 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.grade-badge--pending {
+  background: color-mix(in srgb, var(--panel) 70%, #3d6b3a);
+  border-color: var(--line);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.75;
+  }
+}
+
 .steps {
   margin: 0;
   padding-left: 1.2rem;

@@ -1,5 +1,12 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { maskToOverlay, segmentBanana } from '../vision/segment';
+import {
+  useEffect,
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
+import {
+  maskToOverlayFast,
+  segmentBananaFast,
+} from '../vision/pipeline';
 import type { Roi } from '../vision/segment';
 
 interface Props {
@@ -29,22 +36,34 @@ export function ConfirmView({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = imageData.width;
-    canvas.height = imageData.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let cancelled = false;
+    const handle = window.setTimeout(() => {
+      if (cancelled) return;
+      canvas.width = imageData.width;
+      canvas.height = imageData.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    const mask = segmentBanana(imageData, { threshold, roi: roi ?? undefined });
-    const overlay = maskToOverlay(imageData, mask);
-    ctx.putImageData(overlay, 0, 0);
+      const mask = segmentBananaFast(imageData, {
+        threshold,
+        roi: roi ?? undefined,
+      });
+      const overlay = maskToOverlayFast(imageData, mask);
+      ctx.putImageData(overlay, 0, 0);
 
-    if (roi) {
-      ctx.strokeStyle = '#f0e6c8';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 4]);
-      ctx.strokeRect(roi.x, roi.y, roi.width, roi.height);
-      ctx.setLineDash([]);
-    }
+      if (roi) {
+        ctx.strokeStyle = '#f0e6c8';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(roi.x, roi.y, roi.width, roi.height);
+        ctx.setLineDash([]);
+      }
+    }, 48);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
   }, [imageData, threshold, roi]);
 
   function canvasPoint(e: ReactPointerEvent<HTMLCanvasElement>) {
@@ -58,18 +77,16 @@ export function ConfirmView({
   return (
     <section className="panel confirm">
       <header className="panel__header">
-        <h2>Check the banana</h2>
+        <h2>Adjust detection</h2>
         <ol className="steps">
           <li>
-            Look for a <strong>green tint</strong> on the peel — that is what the app will
-            grade.
+            Green tint = peel the app will grade.
           </li>
           <li>
-            If the tint covers too much (or too little), drag a box around <strong>one
-            banana only</strong>.
+            Drag a box around <strong>one banana</strong> if needed.
           </li>
           <li>
-            Use the slider if needed, then tap <strong>Grade banana</strong>.
+            Tap <strong>Grade banana</strong>.
           </li>
         </ol>
       </header>
@@ -100,9 +117,7 @@ export function ConfirmView({
       </div>
 
       <label className="slider">
-        <span>
-          Detect more peel ← → Detect less peel
-        </span>
+        <span>Detect more peel ← → Detect less peel</span>
         <input
           type="range"
           min={0.2}

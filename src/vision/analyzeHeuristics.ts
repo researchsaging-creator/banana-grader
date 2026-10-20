@@ -1,37 +1,19 @@
-import { gradeFromMetrics } from '../grading/gradeFromMetrics';
-import type { AnalyzeOptions, BananaMetrics, GradeResult } from '../ml/types';
-import { detectBlemishes } from './blemishes';
-import { computePeelColorStats } from './color';
-import { segmentBanana } from './segment';
+import type { AnalyzeOptions, GradeResult } from '../ml/types';
+import { analyzeFast } from './pipeline';
 
-/** Client-side CV pipeline → GradeResult */
+export type TimedGradeResult = GradeResult & { analysisMs: number };
+
+/** Client-side CV pipeline → GradeResult (optimized single-pass Lab). */
 export function analyzeWithHeuristics(
   imageData: ImageData,
   options: AnalyzeOptions = {},
-): GradeResult {
-  const mask = segmentBanana(imageData, options);
-  const color = computePeelColorStats(imageData, mask);
-  const blemish = detectBlemishes(imageData, mask, color.meanLab);
-  const maskCoverage = mask.length
-    ? mask.reduce((s, v) => s + v, 0) / mask.length
-    : 0;
-
-  const metrics: BananaMetrics = {
-    stage: color.stage,
-    meanLab: color.meanLab,
-    hue: color.hue,
-    colorVariance: color.colorVariance,
-    blemishPercent: blemish.blemishPercent,
-    hasSevereBruise: blemish.hasSevereBruise,
-    maskCoverage,
-  };
-
-  return gradeFromMetrics(metrics, 'heuristics');
+): TimedGradeResult {
+  return analyzeFast(imageData, options);
 }
 
 export function analyzeBanana(
   imageData: ImageData,
   options: AnalyzeOptions = {},
-): GradeResult {
+): TimedGradeResult {
   return analyzeWithHeuristics(imageData, options);
 }

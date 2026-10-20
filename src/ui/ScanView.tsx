@@ -23,8 +23,8 @@ export function ScanView({
       <header className="panel__header">
         <h1 className="brand">Banana Export Grader</h1>
         <p className="lede">
-          Photo one green banana in daylight (or upload a photo). We grade peel color
-          and blemishes as Extra, Class I, Class II, or Reject.
+          Capture or upload one green banana — grading starts instantly. Results show
+          Extra, Class I, Class II, or Reject.
         </p>
       </header>
 
@@ -60,7 +60,7 @@ export function ScanView({
           disabled={!camera.streaming}
           onClick={onCapture}
         >
-          Capture
+          Capture &amp; grade
         </button>
         <button
           type="button"

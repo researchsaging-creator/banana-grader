@@ -1,47 +1,9 @@
 import { CRITERIA } from '../grading/criteria';
 import type { LabColor } from '../ml/types';
-
-/** sRGB channel 0–255 → linear */
-function srgbToLinear(c: number): number {
-  const s = c / 255;
-  return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-}
-
-/** sRGB → CIE XYZ (D65) */
-export function rgbToXyz(r: number, g: number, b: number): { x: number; y: number; z: number } {
-  const R = srgbToLinear(r);
-  const G = srgbToLinear(g);
-  const B = srgbToLinear(b);
-  return {
-    x: R * 0.4124564 + G * 0.3575761 + B * 0.1804375,
-    y: R * 0.2126729 + G * 0.7151522 + B * 0.072175,
-    z: R * 0.0193339 + G * 0.119192 + B * 0.9503041,
-  };
-}
-
-function labF(t: number): number {
-  const delta = 6 / 29;
-  return t > delta ** 3 ? Math.cbrt(t) : t / (3 * delta * delta) + 4 / 29;
-}
-
-/** XYZ → CIE L*a*b* (D65 white) */
-export function xyzToLab(x: number, y: number, z: number): LabColor {
-  const Xn = 0.95047;
-  const Yn = 1.0;
-  const Zn = 1.08883;
-  const fx = labF(x / Xn);
-  const fy = labF(y / Yn);
-  const fz = labF(z / Zn);
-  return {
-    L: 116 * fy - 16,
-    a: 500 * (fx - fy),
-    b: 200 * (fy - fz),
-  };
-}
+import { rgbToLabFast } from './labBuffers';
 
 export function rgbToLab(r: number, g: number, b: number): LabColor {
-  const { x, y, z } = rgbToXyz(r, g, b);
-  return xyzToLab(x, y, z);
+  return rgbToLabFast(r, g, b);
 }
 
 /** CIE Lab hue angle in degrees [0, 360) */
