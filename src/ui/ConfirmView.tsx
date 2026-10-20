@@ -58,11 +58,20 @@ export function ConfirmView({
   return (
     <section className="panel confirm">
       <header className="panel__header">
-        <h2>Confirm region</h2>
-        <p className="lede">
-          Green tint shows detected peel. Drag on the image to crop a finger ROI, or
-          adjust sensitivity.
-        </p>
+        <h2>Check the banana</h2>
+        <ol className="steps">
+          <li>
+            Look for a <strong>green tint</strong> on the peel — that is what the app will
+            grade.
+          </li>
+          <li>
+            If the tint covers too much (or too little), drag a box around <strong>one
+            banana only</strong>.
+          </li>
+          <li>
+            Use the slider if needed, then tap <strong>Grade banana</strong>.
+          </li>
+        </ol>
       </header>
 
       <div className="preview-wrap">
@@ -91,7 +100,9 @@ export function ConfirmView({
       </div>
 
       <label className="slider">
-        <span>Peel sensitivity</span>
+        <span>
+          Detect more peel ← → Detect less peel
+        </span>
         <input
           type="range"
           min={0.2}
@@ -99,6 +110,7 @@ export function ConfirmView({
           step={0.05}
           value={threshold}
           onChange={(e) => onThreshold(Number(e.target.value))}
+          aria-label="How much green peel to detect"
         />
       </label>
 
@@ -111,10 +123,10 @@ export function ConfirmView({
           className="btn btn--ghost"
           onClick={() => onRoi(null)}
         >
-          Clear crop
+          Clear box
         </button>
         <button type="button" className="btn btn--ghost" onClick={onBack}>
-          Retake
+          Take new photo
         </button>
       </div>
     </section>

@@ -23,8 +23,8 @@ export function ScanView({
       <header className="panel__header">
         <h1 className="brand">Banana Export Grader</h1>
         <p className="lede">
-          Frame a single finger in daylight. We score peel color (Von Loesecke) and
-          blemish area for Extra / Class I / Class II / Reject.
+          Photo one green banana in daylight (or upload a photo). We grade peel color
+          and blemishes as Extra, Class I, Class II, or Reject.
         </p>
       </header>
 
